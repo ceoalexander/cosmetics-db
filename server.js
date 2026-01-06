@@ -111,13 +111,19 @@ class OliveyoungCrawler {
       await page.waitForSelector('.prd_info', { timeout: 10000 }).catch(() => null);
       
       const products = await page.evaluate(() => {
-        const items = document.querySelectorAll('.prd_info');
+        const items = document.querySelectorAll('.prd_unit');
         return Array.from(items).slice(0, 20).map(item => {
-          const linkEl = item.querySelector('a');
-          const brandEl = item.querySelector('.tx_brand');
-          const nameEl = item.querySelector('.tx_name');
-          const priceEl = item.querySelector('.tx_cur em');
-          const imgEl = item.closest('.prd_unit')?.querySelector('.thumb img');
+          const infoEl = item.querySelector('.prd_info');
+          const linkEl = infoEl?.querySelector('a');
+          const brandEl = infoEl?.querySelector('.tx_brand');
+          const nameEl = infoEl?.querySelector('.tx_name');
+          const priceEl = infoEl?.querySelector('.tx_cur em');
+          
+          let imageUrl = '';
+          const imgEl = item.querySelector('.thumb img');
+          if (imgEl) {
+            imageUrl = imgEl.src || imgEl.getAttribute('data-src') || imgEl.getAttribute('data-original') || '';
+          }
           
           const href = linkEl?.href || '';
           const goodsNoMatch = href.match(/goodsNo=([A-Z0-9]+)/);
@@ -128,7 +134,7 @@ class OliveyoungCrawler {
             brand: brandEl?.textContent?.trim() || '',
             name: nameEl?.textContent?.trim() || '',
             price: priceEl?.textContent?.trim() || '',
-            imageUrl: imgEl?.src || ''
+            imageUrl: imageUrl
           };
         }).filter(p => p.goodsNo);
       });
@@ -367,13 +373,20 @@ app.get('/api/crawler/search', async (req, res) => {
       await page.waitForSelector('.prd_info', { timeout: 10000 }).catch(() => null);
       
       const products = await page.evaluate(() => {
-        const items = document.querySelectorAll('.prd_info');
+        const items = document.querySelectorAll('.prd_unit');
         return Array.from(items).slice(0, 20).map(item => {
-          const linkEl = item.querySelector('a');
-          const brandEl = item.querySelector('.tx_brand');
-          const nameEl = item.querySelector('.tx_name');
-          const priceEl = item.querySelector('.tx_cur em');
-          const imgEl = item.closest('.prd_unit')?.querySelector('.thumb img');
+          const infoEl = item.querySelector('.prd_info');
+          const linkEl = infoEl?.querySelector('a');
+          const brandEl = infoEl?.querySelector('.tx_brand');
+          const nameEl = infoEl?.querySelector('.tx_name');
+          const priceEl = infoEl?.querySelector('.tx_cur em');
+          
+          // 이미지 찾기 - 여러 방법 시도
+          let imageUrl = '';
+          const imgEl = item.querySelector('.thumb img');
+          if (imgEl) {
+            imageUrl = imgEl.src || imgEl.getAttribute('data-src') || imgEl.getAttribute('data-original') || '';
+          }
           
           const href = linkEl?.href || '';
           const goodsNoMatch = href.match(/goodsNo=([A-Z0-9]+)/);
@@ -384,7 +397,7 @@ app.get('/api/crawler/search', async (req, res) => {
             brand: brandEl?.textContent?.trim() || '',
             name: nameEl?.textContent?.trim() || '',
             price: priceEl?.textContent?.trim() || '',
-            imageUrl: imgEl?.src || ''
+            imageUrl: imageUrl
           };
         }).filter(p => p.goodsNo);
       });
