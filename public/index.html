@@ -566,6 +566,50 @@
     } catch (err) { progressDiv.innerHTML = `<div class="crawl-status"><div class="crawl-status-item error"><i class="ri-close-circle-fill"></i> 오류: ${err.message}</div></div>`; }
   }
 
+  async function crawlFromUrl() {
+    const urlInput = document.getElementById('crawlUrl').value.trim();
+    if (!urlInput) { showToast('URL을 입력하세요.', 'error'); return; }
+    
+    // goodsNo 추출
+    const goodsNoMatch = urlInput.match(/goodsNo=([A-Z0-9]+)/i);
+    if (!goodsNoMatch) { showToast('올바른 올리브영 제품 URL이 아닙니다.', 'error'); return; }
+    
+    const goodsNo = goodsNoMatch[1];
+    const progressDiv = document.getElementById('crawlProgress');
+    progressDiv.innerHTML = '<div class="crawl-status"><div class="crawl-status-item loading"><i class="ri-loader-4-line"></i> 전성분 크롤링 중...</div></div>';
+    
+    try {
+      const res = await fetch(`${API_URL}/api/crawler/batch`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ goodsNos: [goodsNo] }) 
+      });
+      const result = await res.json();
+      
+      let statusHtml = '<div class="crawl-status">';
+      if (result.success && result.success.length > 0) {
+        result.success.forEach(s => { 
+          statusHtml += `<div class="crawl-status-item success"><i class="ri-checkbox-circle-fill"></i> ${s.name || '제품'} - ${s.ingredientCount || 0}개 성분 저장됨</div>`; 
+        });
+        showToast('크롤링 완료!', 'success');
+        await loadProducts();
+      }
+      if (result.failed && result.failed.length > 0) {
+        result.failed.forEach(f => { 
+          statusHtml += `<div class="crawl-status-item error"><i class="ri-close-circle-fill"></i> 오류: ${f.error}</div>`; 
+        });
+      }
+      statusHtml += '</div>';
+      progressDiv.innerHTML = statusHtml;
+      
+      // 입력창 초기화
+      document.getElementById('crawlUrl').value = '';
+      
+    } catch (err) { 
+      progressDiv.innerHTML = `<div class="crawl-status"><div class="crawl-status-item error"><i class="ri-close-circle-fill"></i> 오류: ${err.message}</div></div>`; 
+    }
+  }
+
   function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
