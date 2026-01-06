@@ -103,44 +103,57 @@ class OliveyoungCrawler {
     }
   }
 
-  // 올리브영 검색
+  // 올리브영 검색 (API 방식 - Puppeteer 불필요)
   async searchProducts(query) {
-    const page = await this.browser.newPage();
+    const fetch = (await import('node-fetch')).default;
     
     try {
-      await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      const searchUrl = `https://www.oliveyoung.co.kr/store/search/getSearchMain.do?query=${encodeURIComponent(query)}&startCount=0&endCount=20`;
       
-      const searchUrl = `https://www.oliveyoung.co.kr/store/search/getSearchMain.do?query=${encodeURIComponent(query)}`;
-      await page.goto(searchUrl, { waitUntil: 'networkidle2', timeout: 30000 });
-      
-      await page.waitForSelector('.prd_info', { timeout: 10000 }).catch(() => null);
-      
-      const products = await page.evaluate(() => {
-        const items = document.querySelectorAll('.prd_info');
-        return Array.from(items).slice(0, 20).map(item => {
-          const linkEl = item.querySelector('a');
-          const brandEl = item.querySelector('.tx_brand');
-          const nameEl = item.querySelector('.tx_name');
-          const priceEl = item.querySelector('.tx_cur em');
-          const imgEl = item.closest('.prd_unit')?.querySelector('.thumb img');
-          
-          const href = linkEl?.href || '';
-          const goodsNoMatch = href.match(/goodsNo=([A-Z0-9]+)/);
-          
-          return {
-            goodsNo: goodsNoMatch ? goodsNoMatch[1] : '',
-            url: href,
-            brand: brandEl?.textContent?.trim() || '',
-            name: nameEl?.textContent?.trim() || '',
-            price: priceEl?.textContent?.trim() || '',
-            imageUrl: imgEl?.src || ''
-          };
-        }).filter(p => p.goodsNo);
+      const response = await fetch(searchUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Referer': 'https://www.oliveyoung.co.kr/'
+        }
       });
       
+      const html = await response.text();
+      
+      // HTML에서 제품 정보 파싱
+      const products = [];
+      const productRegex = /goodsNo=([A-Z0-9]+)/g;
+      const matches = [...html.matchAll(productRegex)];
+      const goodsNos = [...new Set(matches.map(m => m[1]))].slice(0, 20);
+      
+      // 각 goodsNo에 대한 정보 추출
+      for (const goodsNo of goodsNos) {
+        // 브랜드명 찾기
+        const brandMatch = html.match(new RegExp(`goodsNo=${goodsNo}[^>]*>[\\s\\S]*?tx_brand[^>]*>([^<]+)<`, 'i'));
+        // 제품명 찾기  
+        const nameMatch = html.match(new RegExp(`goodsNo=${goodsNo}[^>]*>[\\s\\S]*?tx_name[^>]*>([^<]+)<`, 'i'));
+        // 가격 찾기
+        const priceMatch = html.match(new RegExp(`goodsNo=${goodsNo}[^>]*>[\\s\\S]*?tx_cur[^>]*>[\\s\\S]*?<em>([^<]+)<`, 'i'));
+        // 이미지 찾기
+        const imgMatch = html.match(new RegExp(`data-goods-no="${goodsNo}"[\\s\\S]*?src="([^"]+)"`, 'i'));
+        
+        products.push({
+          goodsNo,
+          url: `https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=${goodsNo}`,
+          brand: brandMatch ? brandMatch[1].trim() : '',
+          name: nameMatch ? nameMatch[1].trim() : '',
+          price: priceMatch ? priceMatch[1].trim() : '',
+          imageUrl: imgMatch ? imgMatch[1] : ''
+        });
+      }
+      
+      console.log(`[검색] "${query}" - ${products.length}개 결과`);
       return products;
-    } finally {
-      await page.close();
+      
+    } catch (error) {
+      console.error('[검색 오류]', error.message);
+      return [];
     }
   }
 
@@ -352,15 +365,54 @@ app.get('/api/crawler/status', (req, res) => {
 app.get('/api/crawler/search', async (req, res) => {
   const { query } = req.query;
   if (!query) return res.status(400).json({ error: '검색어를 입력하세요.' });
-  if (!puppeteer) return res.status(503).json({ error: 'Puppeteer가 설치되어 있지 않습니다.' });
 
   try {
-    if (!crawler) {
-      crawler = new OliveyoungCrawler();
-      await crawler.init();
+    // API 방식 검색 (Puppeteer 불필요)
+    const fetch = (await import('node-fetch')).default;
+    
+    const searchUrl = `https://www.oliveyoung.co.kr/store/search/getSearchMain.do?query=${encodeURIComponent(query)}`;
+    
+    const response = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
+      }
+    });
+    
+    const html = await response.text();
+    
+    // HTML 파싱으로 제품 추출
+    const products = [];
+    
+    // prd_info 블록 찾기
+    const prdInfoRegex = /<li[^>]*class="[^"]*prd_info[^"]*"[^>]*>([\s\S]*?)<\/li>/gi;
+    let match;
+    
+    while ((match = prdInfoRegex.exec(html)) !== null && products.length < 20) {
+      const block = match[1];
+      
+      const goodsNoMatch = block.match(/goodsNo=([A-Z0-9]+)/);
+      const brandMatch = block.match(/tx_brand[^>]*>([^<]+)</);
+      const nameMatch = block.match(/tx_name[^>]*>([^<]+)</);
+      const priceMatch = block.match(/tx_cur[^>]*>[\s\S]*?<em>([0-9,]+)</);
+      const imgMatch = block.match(/src="(https:\/\/[^"]+\.(?:jpg|png|gif|webp)[^"]*)"/i);
+      
+      if (goodsNoMatch) {
+        products.push({
+          goodsNo: goodsNoMatch[1],
+          url: `https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=${goodsNoMatch[1]}`,
+          brand: brandMatch ? brandMatch[1].trim() : '',
+          name: nameMatch ? nameMatch[1].trim() : '',
+          price: priceMatch ? priceMatch[1].trim() : '',
+          imageUrl: imgMatch ? imgMatch[1] : ''
+        });
+      }
     }
-    const results = await crawler.searchProducts(query);
-    res.json(results);
+    
+    console.log(`[검색] "${query}" - ${products.length}개 결과`);
+    res.json(products);
+    
   } catch (err) {
     console.error('검색 오류:', err);
     res.status(500).json({ error: err.message });

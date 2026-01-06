@@ -14,7 +14,8 @@
     "cors": "^2.8.5",
     "mongoose": "^8.0.0",
     "puppeteer-core": "^21.6.0",
-    "@sparticuz/chromium": "^119.0.0"
+    "@sparticuz/chromium": "^119.0.0",
+    "node-fetch": "^3.3.2"
   },
   "keywords": ["cosmetics", "ingredients", "oliveyoung", "crawler"],
   "author": "품평실",
