@@ -365,74 +365,104 @@ app.get('/api/crawler/status', (req, res) => {
 app.get('/api/crawler/search', async (req, res) => {
   const { query } = req.query;
   if (!query) return res.status(400).json({ error: '검색어를 입력하세요.' });
+  if (!puppeteer) return res.status(503).json({ error: 'Puppeteer가 설치되어 있지 않습니다.' });
 
   try {
-    const fetch = (await import('node-fetch')).default;
+    // 크롤러 초기화
+    if (!crawler) {
+      crawler = new OliveyoungCrawler();
+      await crawler.init();
+    }
     
-    // 올리브영 검색 API 직접 호출
-    const apiUrl = `https://www.oliveyoung.co.kr/store/search/getSearchMainApi.do?query=${encodeURIComponent(query)}&giftYn=N&pageIdx=1&pageSize=20`;
+    console.log(`[검색] ========== 검색 시작 ==========`);
+    console.log(`[검색] 검색어: "${query}"`);
     
-    const response = await fetch(apiUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-        'Accept': 'application/json, text/javascript, */*; q=0.01',
-        'Accept-Language': 'ko-KR,ko;q=0.9',
-        'Referer': 'https://www.oliveyoung.co.kr/store/search/getSearchMain.do',
-        'X-Requested-With': 'XMLHttpRequest'
+    const page = await crawler.browser.newPage();
+    
+    try {
+      await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      await page.setViewport({ width: 1920, height: 1080 });
+      
+      const searchUrl = `https://www.oliveyoung.co.kr/store/search/getSearchMain.do?query=${encodeURIComponent(query)}`;
+      console.log(`[검색] URL 접속 중...`);
+      
+      await page.goto(searchUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+      console.log(`[검색] 페이지 로딩 완료`);
+      
+      // 페이지 로딩 후 추가 대기
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // 페이지 HTML 일부 확인 (디버깅)
+      const pageContent = await page.content();
+      console.log(`[검색] HTML 길이: ${pageContent.length}`);
+      
+      // 다양한 셀렉터 시도
+      const selectors = ['.prd_info', '.prd_unit', '.prd_name', '[class*="product"]', '.search_list li', '#Contents .prd_info'];
+      for (const sel of selectors) {
+        const count = await page.$$eval(sel, els => els.length).catch(() => 0);
+        console.log(`[검색] 셀렉터 "${sel}": ${count}개`);
       }
-    });
-    
-    const contentType = response.headers.get('content-type');
-    console.log(`[검색] "${query}" - 응답 타입: ${contentType}`);
-    
-    // JSON 응답인 경우
-    if (contentType && contentType.includes('application/json')) {
-      const data = await response.json();
-      const products = (data.goodsList || []).slice(0, 20).map(item => ({
-        goodsNo: item.goodsNo || '',
-        url: `https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=${item.goodsNo}`,
-        brand: item.brandName || '',
-        name: item.goodsName || '',
-        price: item.finalPrc ? item.finalPrc.toLocaleString() : '',
-        imageUrl: item.goodsImg || ''
-      }));
       
-      console.log(`[검색] "${query}" - ${products.length}개 결과 (API)`);
-      return res.json(products);
-    }
-    
-    // HTML 응답인 경우 - 다른 방식 시도
-    const html = await response.text();
-    console.log(`[검색] HTML 응답 길이: ${html.length}`);
-    
-    const products = [];
-    
-    // goodsNo 추출
-    const goodsNoMatches = html.matchAll(/goodsNo[=:]["']?([A-Z0-9]+)["']?/gi);
-    const uniqueGoodsNos = [...new Set([...goodsNoMatches].map(m => m[1]))].slice(0, 20);
-    
-    // 브랜드/제품명 추출 시도
-    for (const goodsNo of uniqueGoodsNos) {
-      const brandRegex = new RegExp(`${goodsNo}[\\s\\S]{0,500}?brandName['":\\s]+([^'"<,]+)`, 'i');
-      const nameRegex = new RegExp(`${goodsNo}[\\s\\S]{0,500}?goodsName['":\\s]+([^'"<]+)`, 'i');
-      const imgRegex = new RegExp(`${goodsNo}[\\s\\S]{0,300}?(https://[^"'\\s]+\\.(?:jpg|png|gif|webp))`, 'i');
+      // 검색 결과 존재 여부 확인
+      const hasNoResult = await page.$('.no_result, .nodata, .no_data').catch(() => null);
+      if (hasNoResult) {
+        console.log(`[검색] 올리브영에서 검색 결과 없음 표시`);
+      }
       
-      const brandMatch = html.match(brandRegex);
-      const nameMatch = html.match(nameRegex);
-      const imgMatch = html.match(imgRegex);
-      
-      products.push({
-        goodsNo,
-        url: `https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=${goodsNo}`,
-        brand: brandMatch ? brandMatch[1].trim() : '',
-        name: nameMatch ? nameMatch[1].trim() : goodsNo,
-        price: '',
-        imageUrl: imgMatch ? imgMatch[1] : ''
+      // 제품 추출 시도
+      const products = await page.evaluate(() => {
+        // 방법 1: .prd_info 시도
+        let items = document.querySelectorAll('.prd_info');
+        console.log('방법1 prd_info:', items.length);
+        
+        // 방법 2: .prd_unit 시도  
+        if (items.length === 0) {
+          items = document.querySelectorAll('.prd_unit');
+          console.log('방법2 prd_unit:', items.length);
+        }
+        
+        // 방법 3: data-goods-no 속성으로 시도
+        if (items.length === 0) {
+          items = document.querySelectorAll('[data-goods-no]');
+          console.log('방법3 data-goods-no:', items.length);
+        }
+        
+        return Array.from(items).slice(0, 20).map(item => {
+          // goodsNo 찾기
+          let goodsNo = item.getAttribute('data-goods-no') || '';
+          if (!goodsNo) {
+            const link = item.querySelector('a[href*="goodsNo"]');
+            if (link) {
+              const match = link.href.match(/goodsNo=([A-Z0-9]+)/);
+              goodsNo = match ? match[1] : '';
+            }
+          }
+          
+          // 브랜드, 이름 찾기
+          const brandEl = item.querySelector('.tx_brand, [class*="brand"]');
+          const nameEl = item.querySelector('.tx_name, .prd_name, [class*="name"]');
+          const priceEl = item.querySelector('.tx_cur em, .prc em, [class*="price"] em');
+          const imgEl = item.querySelector('img');
+          
+          return {
+            goodsNo: goodsNo,
+            url: goodsNo ? `https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=${goodsNo}` : '',
+            brand: brandEl?.textContent?.trim() || '',
+            name: nameEl?.textContent?.trim() || '',
+            price: priceEl?.textContent?.trim() || '',
+            imageUrl: imgEl?.src || ''
+          };
+        }).filter(p => p.goodsNo);
       });
+      
+      console.log(`[검색] 추출된 제품: ${products.length}개`);
+      console.log(`[검색] ========== 검색 완료 ==========`);
+      
+      res.json(products);
+      
+    } finally {
+      await page.close();
     }
-    
-    console.log(`[검색] "${query}" - ${products.length}개 결과 (HTML)`);
-    res.json(products);
     
   } catch (err) {
     console.error('[검색 오류]', err.message);
