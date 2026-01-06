@@ -18,6 +18,30 @@ try {
 // 미들웨어
 app.use(cors());
 app.use(express.json());
+
+// ============ 접속 코드 인증 ============
+const ACCESS_CODE = process.env.ACCESS_CODE || 'admin1234';
+
+// 인증 확인 API
+app.post('/api/auth/verify', (req, res) => {
+  const { code } = req.body;
+  if (code === ACCESS_CODE) {
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ success: false, error: '접속 코드가 올바르지 않습니다.' });
+  }
+});
+
+// 인증 상태 확인 API
+app.get('/api/auth/check', (req, res) => {
+  const authHeader = req.headers['x-access-code'];
+  if (authHeader === ACCESS_CODE) {
+    res.json({ authenticated: true });
+  } else {
+    res.status(401).json({ authenticated: false });
+  }
+});
+
 app.use(express.static('public'));
 
 // ============ MongoDB 설정 ============
