@@ -424,7 +424,10 @@
   }
 
   function openModal(id) { document.getElementById(id).classList.add('active'); }
-  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+  function closeModal(id) { 
+    document.getElementById(id).classList.remove('active'); 
+    if (id === 'crawlModal') loadProducts();
+  }
   function openAddModal() { document.getElementById('addBrand').value = ''; document.getElementById('addName').value = ''; document.getElementById('addCategory').value = ''; document.getElementById('addIngredients').value = ''; document.getElementById('addOliveyoungUrl').value = ''; openModal('addModal'); }
 
   async function saveProduct() {
