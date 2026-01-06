@@ -6,10 +6,12 @@ const mongoose = require('mongoose');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Puppeteer 동적 로드
+// Puppeteer 동적 로드 (Render 최적화)
 let puppeteer = null;
+let chromium = null;
 try {
-  puppeteer = require('puppeteer');
+  puppeteer = require('puppeteer-core');
+  chromium = require('@sparticuz/chromium');
   console.log('✅ Puppeteer 로드됨 - 크롤링 기능 사용 가능');
 } catch (e) {
   console.log('⚠️  Puppeteer 미설치 - 크롤링 기능 비활성화');
@@ -73,20 +75,23 @@ class OliveyoungCrawler {
   }
 
   async init() {
-    if (!puppeteer) {
+    if (!puppeteer || !chromium) {
       throw new Error('Puppeteer가 설치되어 있지 않습니다.');
     }
     
     this.browser = await puppeteer.launch({
-      headless: 'new',
+      headless: chromium.headless,
+      executablePath: await chromium.executablePath(),
       args: [
+        ...chromium.args,
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-accelerated-2d-canvas',
         '--disable-gpu',
         '--window-size=1920,1080',
-        '--single-process'
+        '--single-process',
+        '--no-zygote'
       ]
     });
   }
