@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>품평실 | 화장품 전성분 데이터베이스</title>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.0.0/fonts/remixicon.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #faf9f7;
+      --bg-secondary: #ffffff;
+      --bg-accent: #f5f3ef;
+      --text-primary: #1a1a1a;
+      --text-secondary: #666666;
+      --text-muted: #999999;
+      --border-color: #e8e5df;
+      --accent-color: #2d5a4a;
+      --accent-light: #e8f0ed;
+      --accent-hover: #234839;
+      --danger: #c44b4b;
+      --warning: #d4a54a;
+      --success: #4a9d6e;
+      --olive: #6b8e23;
+      --olive-light: #f0f4e8;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+      --shadow-lg: 0 8px 30px rgba(0,0,0,0.08);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 70px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--accent-color), #4a8a6a);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+    }
+
+    .logo-text { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 500; }
+    .logo-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 400; margin-top: -2px; }
+
+    .header-actions { display: flex; gap: 12px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary { background: var(--accent-color); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .btn-secondary { background: var(--bg-accent); color: var(--text-primary); border: 1px solid var(--border-color); }
+    .btn-secondary:hover { background: var(--border-color); }
+    .btn-olive { background: var(--olive); color: white; }
+    .btn-olive:hover { background: #5a7a1e; }
+    .btn-icon { padding: 10px; }
+    .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+    }
+
+    .sidebar { position: sticky; top: 90px; height: fit-content; }
+
+    .sidebar-section {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .sidebar-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 1rem;
+    }
+
+    .search-box { position: relative; }
+    .search-box input {
+      width: 100%;
+      padding: 12px 16px 12px 44px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--bg-primary);
+      transition: all 0.2s ease;
+    }
+    .search-box input:focus { outline: none; border-color: var(--accent-color); background: white; }
+    .search-box i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+
+    .filter-list { list-style: none; }
+    .filter-item {
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.15s ease;
+      color: var(--text-secondary);
+    }
+    .filter-item:hover, .filter-item.active { background: var(--accent-light); color: var(--accent-color); }
+    .filter-item .count {
+      background: var(--bg-accent);
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .filter-item.active .count { background: var(--accent-color); color: white; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .stat-card { background: var(--bg-accent); padding: 1rem; border-radius: var(--radius-sm); text-align: center; }
+    .stat-value { font-size: 1.5rem; font-weight: 600; color: var(--accent-color); }
+    .stat-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+    .content { min-height: 70vh; }
+    .content-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .content-title { font-size: 1.5rem; font-weight: 600; }
+
+    .view-toggle { display: flex; background: var(--bg-accent); border-radius: var(--radius-sm); padding: 4px; }
+    .view-toggle button {
+      padding: 8px 12px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      border-radius: 4px;
+      color: var(--text-muted);
+      transition: all 0.15s ease;
+    }
+    .view-toggle button.active { background: var(--bg-secondary); color: var(--text-primary); box-shadow: var(--shadow-sm); }
+
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+
+    .product-card {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .product-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--accent-color); }
+
+    .product-image {
+      width: 100%;
+      height: 180px;
+      background: var(--bg-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 3rem;
+    }
+    .product-image img { width: 100%; height: 100%; object-fit: cover; }
+
+    .product-info { padding: 1.25rem; }
+    .product-brand { font-size: 0.8rem; color: var(--accent-color); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .product-name { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.75rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .product-meta { display: flex; align-items: center; gap: 1rem; color: var(--text-muted); font-size: 0.85rem; }
+    .product-meta span { display: flex; align-items: center; gap: 4px; }
+
+    .ingredient-preview { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+    .ingredient-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ingredient-tag { background: var(--bg-accent); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; color: var(--text-secondary); }
+    .ingredient-more { color: var(--text-muted); font-size: 0.75rem; }
+
+    .products-list { display: flex; flex-direction: column; gap: 12px; }
+    .product-list-item {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      padding: 1.25rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 1.5rem;
+      align-items: center;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .product-list-item:hover { border-color: var(--accent-color); box-shadow: var(--shadow-md); }
+    .product-list-thumb {
+      width: 70px;
+      height: 70px;
+      background: var(--bg-accent);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+    }
+    .product-list-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-sm); }
+    .product-list-info { min-width: 0; }
+    .product-list-actions { display: flex; gap: 8px; }
+
+    .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
+    .empty-state i { font-size: 4rem; margin-bottom: 1rem; opacity: 0.3; }
+    .empty-state h3 { font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+
+    .modal {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      width: 90%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+    }
+    .modal-overlay.active .modal { transform: translateY(0); }
+
+    .modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title { font-size: 1.25rem; font-weight: 600; }
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: var(--bg-accent);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+    }
+    .modal-close:hover { background: var(--danger); color: white; }
+
+    .modal-body { padding: 1.5rem; }
+
+    .form-group { margin-bottom: 1.25rem; }
+    .form-label { display: block; font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; color: var(--text-secondary); }
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+    }
+    .form-input:focus { outline: none; border-color: var(--accent-color); }
+    textarea.form-input { min-height: 120px; resize: vertical; }
+    .form-hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; }
+
+    .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 10px; }
+
+    .detail-header { display: flex; gap: 2rem; margin-bottom: 2rem; }
+    .detail-image { width: 200px; height: 200px; background: var(--bg-accent); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .detail-image img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-md); }
+    .detail-info h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .detail-brand { color: var(--accent-color); font-weight: 500; margin-bottom: 1rem; }
+    .detail-link { display: inline-flex; align-items: center; gap: 6px; color: var(--accent-color); text-decoration: none; font-size: 0.9rem; }
+    .detail-link:hover { text-decoration: underline; }
+
+    .ingredients-section h3 { font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+    .ingredients-count { background: var(--accent-light); color: var(--accent-color); padding: 2px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; }
+    .ingredients-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ingredients-list .ingredient-tag { padding: 8px 14px; font-size: 0.85rem; }
+
+    /* 크롤링 모달 스타일 */
+    .crawl-header {
+      background: var(--olive-light);
+      padding: 1rem;
+      border-radius: var(--radius-sm);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .crawl-header i { font-size: 1.5rem; color: var(--olive); }
+    .crawl-header-text h4 { font-size: 1rem; color: var(--olive); margin-bottom: 2px; }
+    .crawl-header-text p { font-size: 0.85rem; color: var(--text-muted); }
+
+    .search-results { margin-top: 1.5rem; }
+    .search-results-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-secondary); }
+
+    .search-result-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      margin-bottom: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .search-result-item:hover { border-color: var(--olive); background: var(--olive-light); }
+    .search-result-item.selected { border-color: var(--olive); background: var(--olive-light); }
+
+    .search-result-thumb {
+      width: 60px;
+      height: 60px;
+      background: var(--bg-accent);
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .search-result-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    .search-result-info { flex: 1; min-width: 0; }
+    .search-result-brand { font-size: 0.75rem; color: var(--olive); font-weight: 500; text-transform: uppercase; }
+    .search-result-name { font-size: 0.9rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .search-result-price { font-size: 0.85rem; color: var(--text-muted); }
+
+    .search-result-check { color: var(--olive); font-size: 1.25rem; opacity: 0; transition: opacity 0.2s; }
+    .search-result-item.selected .search-result-check { opacity: 1; }
+
+    .crawl-status { margin-top: 1rem; padding: 1rem; background: var(--bg-accent); border-radius: var(--radius-sm); }
+    .crawl-status-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.9rem; }
+    .crawl-status-item:last-child { margin-bottom: 0; }
+    .crawl-status-item.success { color: var(--success); }
+    .crawl-status-item.error { color: var(--danger); }
+    .crawl-status-item.loading { color: var(--text-muted); }
+
+    .ingredient-preview-box {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--bg-primary);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+    }
+    .ingredient-preview-title { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; }
+    .ingredient-preview-content { font-size: 0.85rem; color: var(--text-primary); max-height: 150px; overflow-y: auto; }
+
+    .crawler-unavailable {
+      text-align: center;
+      padding: 2rem;
+      background: #fff3cd;
+      border-radius: var(--radius-sm);
+      border: 1px solid #ffc107;
+    }
+    .crawler-unavailable i { font-size: 3rem; color: #856404; margin-bottom: 1rem; }
+    .crawler-unavailable h4 { color: #856404; margin-bottom: 0.5rem; }
+    .crawler-unavailable p { color: #856404; font-size: 0.9rem; }
+    .crawler-unavailable code { background: #856404; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; }
+
+    .toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 1100; }
+    .toast {
+      background: var(--text-primary);
+      color: white;
+      padding: 14px 20px;
+      border-radius: var(--radius-sm);
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+
+    .loading { display: flex; align-items: center; justify-content: center; padding: 3rem; }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--border-color); border-top-color: var(--accent-color); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 900px) {
+      .main-container { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .products-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+    }
+
+    @media (max-width: 600px) {
+      .header-inner { flex-wrap: wrap; gap: 1rem; padding: 1rem 0; height: auto; }
+      .detail-header { flex-direction: column; gap: 1rem; }
+      .detail-image { width: 100%; height: 250px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon"><i class="ri-flask-line"></i></div>
+      <div>
+        <div class="logo-text">품평실</div>
+        <div class="logo-sub">화장품 전성분 데이터베이스</div>
+      </div>
+    </a>
+    <div class="header-actions">
+      <button class="btn btn-olive" onclick="openCrawlModal()">
+        <i class="ri-download-cloud-line"></i> 올리브영 크롤링
+      </button>
+      <button class="btn btn-secondary" onclick="exportCSV()">
+        <i class="ri-download-2-line"></i> 내보내기
+      </button>
+      <button class="btn btn-secondary" onclick="document.getElementById('csvInput').click()">
+        <i class="ri-upload-2-line"></i> 가져오기
+      </button>
+      <input type="file" id="csvInput" accept=".csv" hidden onchange="importCSV(this)">
+      <button class="btn btn-primary" onclick="openAddModal()">
+        <i class="ri-add-line"></i> 수동 추가
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="main-container">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">검색</div>
+      <div class="search-box">
+        <i class="ri-search-line"></i>
+        <input type="text" id="searchInput" placeholder="브랜드, 제품명, 성분..." oninput="debounceSearch()">
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">브랜드 필터</div>
+      <ul class="filter-list" id="brandFilter">
+        <li class="filter-item active" data-brand="">
+          <span>전체 보기</span>
+          <span class="count" id="totalCount">0</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">통계</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="statProducts">0</div>
+          <div class="stat-label">제품 수</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statBrands">0</div>
+          <div class="stat-label">브랜드 수</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statIngredients">0</div>
+          <div class="stat-label">총 성분 수</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statAvgIngredients">0</div>
+          <div class="stat-label">평균 성분</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <section class="content">
+    <div class="content-header">
+      <h1 class="content-title">전체 제품</h1>
+      <div class="view-toggle">
+        <button class="active" onclick="setView('grid')" id="viewGrid"><i class="ri-grid-fill"></i></button>
+        <button onclick="setView('list')" id="viewList"><i class="ri-list-check"></i></button>
+      </div>
+    </div>
+    <div id="productsContainer">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </section>
+</main>
+
+<!-- 수동 추가/수정 모달 -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modalTitle">제품 추가</h3>
+      <button class="modal-close" onclick="closeModal('addModal')"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editProductId">
+      <div class="form-group">
+        <label class="form-label">브랜드명 *</label>
+        <input type="text" class="form-input" id="inputBrand" placeholder="예: 닥터지, 라네즈, 이니스프리">
+      </div>
+      <div class="form-group">
+        <label class="form-label">제품명 *</label>
+        <input type="text" class="form-input" id="inputName" placeholder="예: 레드 블레미쉬 클리어 수딩 크림">
+      </div>
+      <div class="form-group">
+        <label class="form-label">카테고리</label>
+        <input type="text" class="form-input" id="inputCategory" placeholder="예: 크림, 에센스, 토너">
+      </div>
+      <div class="form-group">
+        <label class="form-label">올리브영 URL</label>
+        <input type="url" class="form-input" id="inputUrl" placeholder="https://www.oliveyoung.co.kr/...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">전성분</label>
+        <textarea class="form-input" id="inputIngredients" placeholder="정제수, 글리세린, 부틸렌글라이콜, ..."></textarea>
+        <p class="form-hint">성분을 쉼표(,)로 구분하여 입력하세요.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('addModal')">취소</button>
+      <button class="btn btn-primary" onclick="saveProduct()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 제품 상세 모달 -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">제품 상세</h3>
+      <button class="modal-close" onclick="closeModal('detailModal')"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="modal-body" id="detailContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="editCurrentProduct()"><i class="ri-edit-line"></i> 수정</button>
+      <button class="btn btn-secondary" style="color: var(--danger)" onclick="deleteCurrentProduct()"><i class="ri-delete-bin-line"></i> 삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- 올리브영 크롤링 모달 -->
+<div class="modal-overlay" id="crawlModal">
+  <div class="modal" style="max-width: 700px;">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="ri-download-cloud-line" style="color: var(--olive);"></i> 올리브영 크롤링</h3>
+      <button class="modal-close" onclick="closeModal('crawlModal')"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="modal-body" id="crawlContent">
+      <!-- 동적 생성 -->
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  let products = [];
+  let filteredProducts = [];
+  let currentView = 'grid';
+  let currentBrand = '';
+  let currentProduct = null;
+  let searchTimeout = null;
+  let crawlerAvailable = false;
+  let selectedProducts = [];
+
+  const API_URL = '';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadProducts();
+    checkCrawlerStatus();
+  });
+
+  async function checkCrawlerStatus() {
+    try {
+      const res = await fetch(`${API_URL}/api/crawler/status`);
+      const data = await res.json();
+      crawlerAvailable = data.available;
+    } catch (err) {
+      crawlerAvailable = false;
+    }
+  }
+
+  async function loadProducts() {
+    try {
+      const res = await fetch(`${API_URL}/api/products`);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      // 배열인지 확인
+      products = Array.isArray(data) ? data : [];
+      filteredProducts = products;
+      updateUI();
+    } catch (err) {
+      console.error('Failed to load products:', err);
+      // 첫 로딩 실패시에만 토스트 표시 (products가 비어있을 때)
+      if (products.length === 0) {
+        showToast('데이터를 불러오는데 실패했습니다.', 'error');
+      }
+    }
+  }
+
+  function updateUI() {
+    updateStats();
+    updateBrandFilter();
+    renderProducts();
+  }
+
+  function updateStats() {
+    const brands = new Set(products.map(p => p.brand));
+    const totalIngredients = products.reduce((sum, p) => sum + (p.ingredients?.length || 0), 0);
+    document.getElementById('statProducts').textContent = products.length;
+    document.getElementById('statBrands').textContent = brands.size;
+    document.getElementById('statIngredients').textContent = totalIngredients;
+    document.getElementById('statAvgIngredients').textContent = products.length ? Math.round(totalIngredients / products.length) : 0;
+    document.getElementById('totalCount').textContent = products.length;
+  }
+
+  function updateBrandFilter() {
+    const brandCounts = {};
+    products.forEach(p => { brandCounts[p.brand] = (brandCounts[p.brand] || 0) + 1; });
+    const sortedBrands = Object.entries(brandCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const container = document.getElementById('brandFilter');
+    container.innerHTML = `<li class="filter-item ${!currentBrand ? 'active' : ''}" onclick="filterByBrand('')"><span>전체 보기</span><span class="count">${products.length}</span></li>`;
+    sortedBrands.forEach(([brand, count]) => {
+      container.innerHTML += `<li class="filter-item ${currentBrand === brand ? 'active' : ''}" onclick="filterByBrand('${brand}')"><span>${brand}</span><span class="count">${count}</span></li>`;
+    });
+  }
+
+  function filterByBrand(brand) {
+    currentBrand = brand;
+    applyFilters();
+    updateBrandFilter();
+  }
+
+  function debounceSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(applyFilters, 300);
+  }
+
+  function applyFilters() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    filteredProducts = products.filter(p => {
+      if (currentBrand && p.brand !== currentBrand) return false;
+      if (search) {
+        const inName = p.name.toLowerCase().includes(search);
+        const inBrand = p.brand.toLowerCase().includes(search);
+        const inIngredients = p.ingredients?.some(i => i.toLowerCase().includes(search));
+        if (!inName && !inBrand && !inIngredients) return false;
+      }
+      return true;
+    });
+    renderProducts();
+    document.querySelector('.content-title').textContent = currentBrand || (search ? `"${search}" 검색 결과` : '전체 제품');
+  }
+
+  function renderProducts() {
+    const container = document.getElementById('productsContainer');
+    if (filteredProducts.length === 0) {
+      container.innerHTML = `<div class="empty-state"><i class="ri-inbox-line"></i><h3>등록된 제품이 없습니다</h3><p>"올리브영 크롤링" 또는 "수동 추가" 버튼으로 제품을 등록해보세요.</p></div>`;
+      return;
+    }
+    if (currentView === 'grid') {
+      container.innerHTML = `<div class="products-grid">${filteredProducts.map(renderGridCard).join('')}</div>`;
+    } else {
+      container.innerHTML = `<div class="products-list">${filteredProducts.map(renderListItem).join('')}</div>`;
+    }
+  }
+
+  function renderGridCard(product) {
+    const previewIngredients = (product.ingredients || []).slice(0, 3);
+    const moreCount = (product.ingredients?.length || 0) - 3;
+    return `
+      <div class="product-card" onclick="openDetail('${product._id}')">
+        <div class="product-image">${product.imageUrl ? `<img src="${product.imageUrl}" alt="${product.name}">` : '<i class="ri-flask-line"></i>'}</div>
+        <div class="product-info">
+          <div class="product-brand">${product.brand}</div>
+          <div class="product-name">${product.name}</div>
+          <div class="product-meta">
+            ${product.category ? `<span><i class="ri-price-tag-3-line"></i> ${product.category}</span>` : ''}
+            <span><i class="ri-flask-line"></i> ${product.ingredients?.length || 0}개 성분</span>
+          </div>
+          ${previewIngredients.length > 0 ? `<div class="ingredient-preview"><div class="ingredient-tags">${previewIngredients.map(i => `<span class="ingredient-tag">${i}</span>`).join('')}${moreCount > 0 ? `<span class="ingredient-more">+${moreCount}</span>` : ''}</div></div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  function renderListItem(product) {
+    return `
+      <div class="product-list-item" onclick="openDetail('${product._id}')">
+        <div class="product-list-thumb">${product.imageUrl ? `<img src="${product.imageUrl}" alt="${product.name}">` : '<i class="ri-flask-line"></i>'}</div>
+        <div class="product-list-info">
+          <div class="product-brand">${product.brand}</div>
+          <div class="product-name">${product.name}</div>
+          <div class="product-meta">
+            ${product.category ? `<span><i class="ri-price-tag-3-line"></i> ${product.category}</span>` : ''}
+            <span><i class="ri-flask-line"></i> ${product.ingredients?.length || 0}개 성분</span>
+          </div>
+        </div>
+        <div class="product-list-actions">
+          <button class="btn btn-secondary btn-icon" onclick="event.stopPropagation(); editProduct('${product._id}')"><i class="ri-edit-line"></i></button>
+        </div>
+      </div>`;
+  }
+
+  function setView(view) {
+    currentView = view;
+    document.getElementById('viewGrid').classList.toggle('active', view === 'grid');
+    document.getElementById('viewList').classList.toggle('active', view === 'list');
+    renderProducts();
+  }
+
+  function openModal(id) { document.getElementById(id).classList.add('active'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  function openAddModal() {
+    document.getElementById('modalTitle').textContent = '제품 추가';
+    document.getElementById('editProductId').value = '';
+    document.getElementById('inputBrand').value = '';
+    document.getElementById('inputName').value = '';
+    document.getElementById('inputCategory').value = '';
+    document.getElementById('inputUrl').value = '';
+    document.getElementById('inputIngredients').value = '';
+    openModal('addModal');
+  }
+
+  function editProduct(id) {
+    const product = products.find(p => p._id === id);
+    if (!product) return;
+    document.getElementById('modalTitle').textContent = '제품 수정';
+    document.getElementById('editProductId').value = id;
+    document.getElementById('inputBrand').value = product.brand;
+    document.getElementById('inputName').value = product.name;
+    document.getElementById('inputCategory').value = product.category || '';
+    document.getElementById('inputUrl').value = product.oliveyoungUrl || '';
+    document.getElementById('inputIngredients').value = (product.ingredients || []).join(', ');
+    closeModal('detailModal');
+    openModal('addModal');
+  }
+
+  async function saveProduct() {
+    const id = document.getElementById('editProductId').value;
+    const brand = document.getElementById('inputBrand').value.trim();
+    const name = document.getElementById('inputName').value.trim();
+    const category = document.getElementById('inputCategory').value.trim();
+    const oliveyoungUrl = document.getElementById('inputUrl').value.trim();
+    const ingredientsRaw = document.getElementById('inputIngredients').value;
+    if (!brand || !name) { showToast('브랜드와 제품명은 필수입니다.', 'error'); return; }
+    const ingredients = ingredientsRaw.split(/[,，]/).map(s => s.trim()).filter(s => s.length > 0);
+    const data = { brand, name, category, oliveyoungUrl, ingredients };
+    try {
+      const url = id ? `${API_URL}/api/products/${id}` : `${API_URL}/api/products`;
+      const method = id ? 'PUT' : 'POST';
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      if (!res.ok) throw new Error('Failed to save');
+      closeModal('addModal');
+      await loadProducts();
+      showToast(id ? '제품이 수정되었습니다.' : '제품이 추가되었습니다.', 'success');
+    } catch (err) { showToast('저장에 실패했습니다.', 'error'); }
+  }
+
+  function openDetail(id) {
+    const product = products.find(p => p._id === id);
+    if (!product) return;
+    currentProduct = product;
+    document.getElementById('detailContent').innerHTML = `
+      <div class="detail-header">
+        <div class="detail-image">${product.imageUrl ? `<img src="${product.imageUrl}" alt="${product.name}">` : '<i class="ri-flask-line" style="font-size: 4rem; color: var(--text-muted);"></i>'}</div>
+        <div class="detail-info">
+          <div class="detail-brand">${product.brand}</div>
+          <h2>${product.name}</h2>
+          ${product.category ? `<p style="color: var(--text-muted); margin: 0.5rem 0;"><i class="ri-price-tag-3-line"></i> ${product.category}</p>` : ''}
+          ${product.oliveyoungUrl ? `<a href="${product.oliveyoungUrl}" target="_blank" class="detail-link"><i class="ri-external-link-line"></i> 올리브영에서 보기</a>` : ''}
+        </div>
+      </div>
+      <div class="ingredients-section">
+        <h3><i class="ri-flask-line"></i> 전성분 <span class="ingredients-count">${product.ingredients?.length || 0}개</span></h3>
+        ${product.ingredients?.length > 0 ? `<div class="ingredients-list">${product.ingredients.map((ing, i) => `<span class="ingredient-tag">${i + 1}. ${ing}</span>`).join('')}</div>` : '<p style="color: var(--text-muted);">등록된 전성분이 없습니다.</p>'}
+      </div>`;
+    openModal('detailModal');
+  }
+
+  function editCurrentProduct() { if (currentProduct) editProduct(currentProduct.id); }
+
+  async function deleteCurrentProduct() {
+    if (!currentProduct) return;
+    if (!confirm(`"${currentProduct.name}" 제품을 삭제하시겠습니까?`)) return;
+    try {
+      const res = await fetch(`${API_URL}/api/products/${currentProduct.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
+      closeModal('detailModal');
+      await loadProducts();
+      showToast('제품이 삭제되었습니다.', 'success');
+    } catch (err) { showToast('삭제에 실패했습니다.', 'error'); }
+  }
+
+  function exportCSV() { window.location.href = `${API_URL}/api/export/csv`; }
+
+  async function importCSV(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const res = await fetch(`${API_URL}/api/import/csv`, { method: 'POST', headers: { 'Content-Type': 'text/csv' }, body: e.target.result });
+        const result = await res.json();
+        await loadProducts();
+        showToast(result.message, 'success');
+      } catch (err) { showToast('가져오기에 실패했습니다.', 'error'); }
+    };
+    reader.readAsText(file);
+    input.value = '';
+  }
+
+  // ============ 크롤링 기능 ============
+
+  function openCrawlModal() {
+    selectedProducts = [];
+    const content = document.getElementById('crawlContent');
+    
+    if (!crawlerAvailable) {
+      content.innerHTML = `
+        <div class="crawler-unavailable">
+          <i class="ri-error-warning-line"></i>
+          <h4>크롤링 기능을 사용하려면 Puppeteer 설치가 필요합니다</h4>
+          <p>터미널에서 아래 명령어를 실행한 후 서버를 재시작하세요:</p>
+          <p style="margin-top: 1rem;"><code>npm install puppeteer</code></p>
+          <p style="margin-top: 0.5rem;">그 후 <code>npm start</code>로 서버를 다시 시작하세요.</p>
+        </div>`;
+    } else {
+      content.innerHTML = `
+        <div class="crawl-header">
+          <i class="ri-store-2-line"></i>
+          <div class="crawl-header-text">
+            <h4>올리브영에서 전성분 가져오기</h4>
+            <p>브랜드 또는 제품명을 검색하여 전성분을 자동으로 수집합니다.</p>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">검색어 (브랜드명 또는 제품명)</label>
+          <div style="display: flex; gap: 10px;">
+            <input type="text" class="form-input" id="crawlQuery" placeholder="예: 닥터지, 라네즈 워터뱅크" style="flex: 1;" onkeypress="if(event.key==='Enter') searchOliveyoung()">
+            <button class="btn btn-olive" onclick="searchOliveyoung()"><i class="ri-search-line"></i> 검색</button>
+          </div>
+        </div>
+        <div id="crawlResults"></div>
+        <div id="crawlActions" style="display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span id="selectedCount" style="color: var(--text-secondary); font-size: 0.9rem;">0개 선택됨</span>
+            <button class="btn btn-olive" onclick="crawlSelected()"><i class="ri-download-cloud-line"></i> 선택 제품 크롤링</button>
+          </div>
+        </div>
+        <div id="crawlProgress"></div>`;
+    }
+    openModal('crawlModal');
+  }
+
+  async function searchOliveyoung() {
+    const query = document.getElementById('crawlQuery').value.trim();
+    if (!query) { showToast('검색어를 입력하세요.', 'error'); return; }
+
+    const resultsDiv = document.getElementById('crawlResults');
+    resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+    document.getElementById('crawlActions').style.display = 'none';
+
+    try {
+      const res = await fetch(`${API_URL}/api/crawler/search?query=${encodeURIComponent(query)}`);
+      if (!res.ok) throw new Error('검색 실패');
+      const results = await res.json();
+
+      if (results.length === 0) {
+        resultsDiv.innerHTML = '<div class="empty-state" style="padding: 2rem;"><i class="ri-search-line"></i><h3>검색 결과가 없습니다</h3></div>';
+        return;
+      }
+
+      selectedProducts = [];
+      resultsDiv.innerHTML = `
+        <div class="search-results">
+          <div class="search-results-title">검색 결과 (${results.length}개) - 클릭하여 선택</div>
+          ${results.map(p => `
+            <div class="search-result-item" data-goods-no="${p.goodsNo}" onclick="toggleProductSelection('${p.goodsNo}', this)">
+              <div class="search-result-thumb">${p.imageUrl ? `<img src="${p.imageUrl}">` : ''}</div>
+              <div class="search-result-info">
+                <div class="search-result-brand">${p.brand}</div>
+                <div class="search-result-name">${p.name}</div>
+                <div class="search-result-price">${p.price ? p.price + '원' : ''}</div>
+              </div>
+              <div class="search-result-check"><i class="ri-checkbox-circle-fill"></i></div>
+            </div>
+          `).join('')}
+        </div>`;
+      document.getElementById('crawlActions').style.display = 'block';
+    } catch (err) {
+      resultsDiv.innerHTML = `<div class="empty-state" style="padding: 2rem;"><i class="ri-error-warning-line"></i><h3>검색 중 오류가 발생했습니다</h3><p>${err.message}</p></div>`;
+    }
+  }
+
+  function toggleProductSelection(goodsNo, element) {
+    const index = selectedProducts.indexOf(goodsNo);
+    if (index > -1) {
+      selectedProducts.splice(index, 1);
+      element.classList.remove('selected');
+    } else {
+      selectedProducts.push(goodsNo);
+      element.classList.add('selected');
+    }
+    document.getElementById('selectedCount').textContent = `${selectedProducts.length}개 선택됨`;
+  }
+
+  async function crawlSelected() {
+    if (selectedProducts.length === 0) { showToast('크롤링할 제품을 선택하세요.', 'error'); return; }
+
+    const progressDiv = document.getElementById('crawlProgress');
+    progressDiv.innerHTML = '<div class="crawl-status"><div class="crawl-status-item loading"><i class="ri-loader-4-line"></i> 크롤링 시작 중...</div></div>';
+
+    try {
+      const res = await fetch(`${API_URL}/api/crawler/batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ goodsNos: selectedProducts })
+      });
+      const result = await res.json();
+
+      let statusHtml = '<div class="crawl-status">';
+      if (result.success && result.success.length > 0) {
+        result.success.forEach(s => {
+          statusHtml += `<div class="crawl-status-item success"><i class="ri-checkbox-circle-fill"></i> ${s.name || '제품'} (${s.ingredientCount || 0}개 성분)</div>`;
+        });
+      }
+      if (result.failed && result.failed.length > 0) {
+        result.failed.forEach(f => {
+          statusHtml += `<div class="crawl-status-item error"><i class="ri-close-circle-fill"></i> ${f.goodsNo}: ${f.error}</div>`;
+        });
+      }
+      statusHtml += '</div>';
+      progressDiv.innerHTML = statusHtml;
+
+      // 서버 안정화 대기 후 제품 목록 새로고침
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await loadProducts();
+      
+      const successCount = result.success ? result.success.length : 0;
+      if (successCount > 0) {
+        showToast(`${successCount}개 제품 크롤링 완료!`, 'success');
+      }
+    } catch (err) {
+      progressDiv.innerHTML = `<div class="crawl-status"><div class="crawl-status-item error"><i class="ri-close-circle-fill"></i> 오류: ${err.message}</div></div>`;
+    }
+  }
+
+  function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<i class="ri-${type === 'success' ? 'check' : type === 'error' ? 'close' : 'information'}-line"></i> ${message}`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "cosmetics-db",
+  "version": "2.0.0",
+  "description": "품평실 화장품 전성분 데이터베이스",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "mongoose": "^8.0.0",
+    "puppeteer": "^21.6.0"
+  },
+  "keywords": ["cosmetics", "ingredients", "oliveyoung", "crawler"],
+  "author": "품평실",
+  "license": "MIT"
+}
